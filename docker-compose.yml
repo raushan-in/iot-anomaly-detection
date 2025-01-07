@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: timescale/timescaledb:latest-pg14  # TimescaleDB-enabled PostgreSQL
+    container_name: postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - sensors_data_pg:/var/lib/postgresql/data
+    networks:
+      - iot_network
+
+  iot-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: iot-app:latest
+    container_name: iot-app
+    env_file:  # Make sure to add a .env file
+      - .env
+    stdin_open: true # Keep container interactive
+    tty: true        # Allocate a pseudo-TTY
+    depends_on:
+      - postgres
+    volumes:
+      - iot_app_data:${OUTPUT_FOLDER}
+    networks:
+      - iot_network
+
+volumes:
+  sensors_data_pg:
+  iot_app_data:
+
+networks:
+  iot_network:
+    driver: bridge
